@@ -10,7 +10,7 @@ from app.data import Database
 from app.graph import chart
 from app.machine import Machine
 
-SPRINT = 1
+SPRINT = 2
 APP = Flask(__name__)
 APP.debug = True
 
@@ -46,8 +46,10 @@ def view():
     x_axis = request.values.get("x_axis") or options[1]
     y_axis = request.values.get("y_axis") or options[2]
     target = request.values.get("target") or options[4]
+    df = db.dataframe()
+    new_df = df[["Name", "Type", "Level", "Rarity", "Damage", "Health", "Energy", "Sanity", "Timestamp"]]
     graph = chart(
-        df=db.dataframe(),
+        df=new_df,
         x=x_axis,
         y=y_axis,
         target=target,
@@ -59,7 +61,7 @@ def view():
         y_axis=y_axis,
         target=target,
         count=db.count(),
-        graph=graph,
+        graph=graph
     )
 
 
