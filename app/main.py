@@ -1,22 +1,27 @@
+'''
+The main file logic for the app that generates, analyzes, and models Monster data.
+'''
+
 from base64 import b64decode
 import os
 
-from Fortuna import random_int, random_float
-from MonsterLab import Monster
 from flask import Flask, render_template, request
 from pandas import DataFrame
 
 from app.data import Database
 from app.graph import chart
 from app.machine import Machine
+from Fortuna import random_int, random_float
+from MonsterLab import Monster
 
-SPRINT = 2
+SPRINT = 3
 APP = Flask(__name__)
 APP.debug = True
 
 
 @APP.route("/")
 def home():
+    '''Home page featuring example monster data.'''
     return render_template(
         "home.html",
         sprint=f"Sprint {SPRINT}",
@@ -27,6 +32,7 @@ def home():
 
 @APP.route("/data")
 def data():
+    '''Returns the created database.'''
     if SPRINT < 1:
         return render_template("data.html")
     db = Database()
@@ -39,6 +45,7 @@ def data():
 
 @APP.route("/view", methods=["GET", "POST"])
 def view():
+    '''Takes data from database and charts it, X-axis, Y-axis, and Target are drop down choices.'''
     if SPRINT < 2:
         return render_template("view.html")
     db = Database()
@@ -67,13 +74,18 @@ def view():
 
 @APP.route("/model", methods=["GET", "POST"])
 def model():
+    '''
+		Takes the data from our database and creates or loads a file, then models it. Can retrain model.
+		Displays title, timestamp, prediction, and confidence percentage.
+	'''
     if SPRINT < 3:
         return render_template("model.html")
     db = Database()
     options = ["Level", "Health", "Energy", "Sanity", "Rarity"]
-    filepath = os.path.join("app", "model.joblib")
-    if not os.path.exists(filepath):
-        df = db.dataframe()
+    filepath = "model.joblib"
+    df = db.dataframe()
+    retrain = request.values.get("retrain", type=bool)
+    if not os.path.exists(filepath) or retrain:
         machine = Machine(df[options])
         machine.save(filepath)
     else:
@@ -86,7 +98,7 @@ def model():
     prediction, confidence = machine(DataFrame(
         [dict(zip(options, (level, health, energy, sanity)))]
     ))
-    info = machine.info()
+    info = machine.info(machine.name, machine.timestamp)
     return render_template(
         "model.html",
         info=info,
@@ -95,7 +107,7 @@ def model():
         energy=energy,
         sanity=sanity,
         prediction=prediction,
-        confidence=f"{confidence:.2%}",
+        confidence=f"{confidence[0]:.2%}"
     )
 
 
